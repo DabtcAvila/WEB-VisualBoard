@@ -16,10 +16,16 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Configurar CORS - Permitir localhost en desarrollo
+# Configurar CORS - Permitir localhost en desarrollo y GitHub Pages en producción
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:5174", 
+        "http://localhost:3000",
+        "https://dabtcavila.github.io",  # GitHub Pages
+        "https://DabtcAvila.github.io"    # GitHub Pages (case variations)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

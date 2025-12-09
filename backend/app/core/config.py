@@ -1,7 +1,8 @@
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings
 from pydantic import AnyHttpUrl
 import json
+import os
 
 
 class Settings(BaseSettings):
@@ -9,24 +10,28 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api"
     
-    SECRET_KEY: str
-    DEBUG: bool = False
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")
+    DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
     
-    DATABASE_URL: str
+    # Handle Render's postgres:// vs postgresql:// issue
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost/visualboard")
+    if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     
-    UNSPLASH_ACCESS_KEY: str
+    UNSPLASH_ACCESS_KEY: Optional[str] = os.getenv("UNSPLASH_API_KEY", os.getenv("UNSPLASH_ACCESS_KEY"))
     
-    CORS_ORIGINS: List[AnyHttpUrl] = []
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://localhost:5174", 
+        "http://localhost:3000",
+        "https://dabtcavila.github.io",
+        "https://DabtcAvila.github.io"
+    ]
 
     class Config:
         env_file = ".env"
         env_file_encoding = 'utf-8'
-        
-        @classmethod
-        def parse_env_var(cls, field_name: str, raw_val: str):
-            if field_name == 'CORS_ORIGINS':
-                return json.loads(raw_val)
-            return raw_val
+        case_sensitive = True
 
 
 settings = Settings()
