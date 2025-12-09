@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
     
-    UNSPLASH_ACCESS_KEY: Optional[str] = os.getenv("UNSPLASH_API_KEY", os.getenv("UNSPLASH_ACCESS_KEY"))
+    UNSPLASH_ACCESS_KEY: Optional[str] = os.getenv("UNSPLASH_ACCESS_KEY")
     
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",

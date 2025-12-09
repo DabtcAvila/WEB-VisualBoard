@@ -48,6 +48,18 @@ def root():
         "health": "/health"
     }
 
+@app.get("/debug/env")
+async def debug_env():
+    """Debug endpoint to check environment variables"""
+    import os
+    return {
+        "UNSPLASH_ACCESS_KEY_set": bool(os.getenv("UNSPLASH_ACCESS_KEY")),
+        "UNSPLASH_API_KEY_set": bool(os.getenv("UNSPLASH_API_KEY")),
+        "DATABASE_URL_set": bool(os.getenv("DATABASE_URL")),
+        "settings_UNSPLASH": bool(settings.UNSPLASH_ACCESS_KEY),
+        "settings_UNSPLASH_first_chars": settings.UNSPLASH_ACCESS_KEY[:4] if settings.UNSPLASH_ACCESS_KEY else None
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=settings.DEBUG)
