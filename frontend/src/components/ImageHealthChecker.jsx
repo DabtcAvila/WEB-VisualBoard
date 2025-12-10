@@ -14,6 +14,10 @@ function ImageHealthChecker({ show, onHide, userOnly = false }) {
     setError(null)
     
     try {
+      // Obtener estado inicial antes de la verificación
+      const initialStatus = await axios.get(`${API_BASE_URL}/api/image-health/status`)
+      const initialInactive = initialStatus.data.inactive_posts
+      
       // Iniciar verificación en segundo plano
       const headers = {}
       if (userOnly) {
@@ -29,9 +33,7 @@ function ImageHealthChecker({ show, onHide, userOnly = false }) {
         { headers }
       )
 
-      // Obtener estado actual
-      const statusResponse = await axios.get(`${API_BASE_URL}/api/image-health/status`)
-      setStatus(statusResponse.data)
+      setStatus(initialStatus.data)
 
       // Esperar un poco para que el proceso en segundo plano avance
       setTimeout(async () => {
@@ -39,9 +41,9 @@ function ImageHealthChecker({ show, onHide, userOnly = false }) {
         setStatus(finalStatus.data)
         setChecking(false)
         
-        // Si se desactivaron posts, limpiar el caché para forzar recarga
-        if (finalStatus.data.inactive_posts > 0) {
-          console.log('Posts inactivos detectados, limpiando caché...')
+        // Solo recargar si se INCREMENTARON los posts inactivos (se desactivaron nuevos posts)
+        if (finalStatus.data.inactive_posts > initialInactive) {
+          console.log(`Posts inactivos aumentaron de ${initialInactive} a ${finalStatus.data.inactive_posts}, limpiando caché...`)
           cache.clear()
           // Recargar la página después de un breve delay
           setTimeout(() => {
