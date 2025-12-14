@@ -24,6 +24,8 @@ function App() {
         <div className="container text-center">
           <p className="mb-0 text-muted">© 2025 Visual Board - Proyecto Integrador COM-11117</p>
           <small className="text-muted">David Fernando Avila Díaz | 197851</small>
+          <br />
+          <small className="text-muted">Emiliano Sebastián Millán Giffard | 214360</small>
         </div>
       </footer>
     </>
