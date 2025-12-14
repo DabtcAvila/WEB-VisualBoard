@@ -99,15 +99,24 @@ function UserAuth() {
     }
   }
 
-  const handleLogout = () => {
+  const handleLogout = (e) => {
+    // Prevenir propagación del evento para evitar problemas con el dropdown
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    
+    // Limpiar sessionStorage
     sessionStorage.removeItem('userData')
     sessionStorage.removeItem('userId')
+    
+    // Actualizar estado local
     setCurrentUser(null)
     
-    // Delay para evitar crash visual
+    // Delay más largo para asegurar que el dropdown se cierre correctamente
     setTimeout(() => {
       window.location.reload()
-    }, 300)
+    }, 500)
   }
 
   const checkUsernameAvailability = async (username) => {
