@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react'
-import { Modal, Form, Button, Alert, Nav, Dropdown } from 'react-bootstrap'
+import React, { useState } from 'react'
+import { Modal, Form, Button, Alert, Dropdown } from 'react-bootstrap'
 import axios from 'axios'
+import { useAuth } from '../context/AuthContext'
 import { API_BASE_URL } from '../config/api'
 
 const API_URL = API_BASE_URL + '/api'
 
 function UserAuth() {
+  const { currentUser, login, logout, loading: authLoading } = useAuth()
   const [showModal, setShowModal] = useState(false)
   const [isLogin, setIsLogin] = useState(true)
-  const [currentUser, setCurrentUser] = useState(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,13 +22,14 @@ function UserAuth() {
     username_or_email: ''
   })
 
-  useEffect(() => {
-    // Cargar usuario desde sessionStorage
-    const userData = sessionStorage.getItem('userData')
-    if (userData) {
-      setCurrentUser(JSON.parse(userData))
-    }
-  }, [])
+  // Si el contexto está cargando, mostrar loading
+  if (authLoading) {
+    return (
+      <Button variant="outline-light" size="sm" disabled>
+        Cargando...
+      </Button>
+    )
+  }
 
   const handleInputChange = (e) => {
     setFormData({
@@ -62,31 +64,33 @@ function UserAuth() {
 
       const userData = response.data
       
-      // Guardar en sessionStorage
-      sessionStorage.setItem('userData', JSON.stringify(userData))
-      sessionStorage.setItem('userId', userData.username)
+      // Usar el contexto para manejar el login
+      const success = login(userData)
       
-      setCurrentUser(userData)
-      setShowModal(false)
-      setFormData({
-        username: '',
-        email: '',
-        full_name: '',
-        password: '',
-        username_or_email: ''
-      })
-      
-      // Mostrar mensaje de éxito en lugar de recargar inmediatamente
-      if (!isLogin) {
-        setSuccess('¡Cuenta creada exitosamente! Redirigiendo...')
-        setLoading(false)
-        // Para registro exitoso, mostrar mensaje antes de recargar
+      if (success) {
+        // Limpiar formulario
+        setFormData({
+          username: '',
+          email: '',
+          full_name: '',
+          password: '',
+          username_or_email: ''
+        })
+        
+        // Mostrar mensaje de éxito
+        if (isLogin) {
+          setSuccess('¡Inicio de sesión exitoso!')
+        } else {
+          setSuccess('¡Cuenta creada exitosamente!')
+        }
+        
+        // Cerrar modal después de un breve delay
         setTimeout(() => {
-          window.location.reload()
-        }, 1500)
+          setShowModal(false)
+          setSuccess('')
+        }, 1000)
       } else {
-        // Para login, recargar inmediatamente
-        window.location.reload()
+        setError('Error al procesar los datos del usuario')
       }
     } catch (err) {
       if (err.response?.data?.detail) {
@@ -106,17 +110,8 @@ function UserAuth() {
       e.stopPropagation()
     }
     
-    // Limpiar sessionStorage
-    sessionStorage.removeItem('userData')
-    sessionStorage.removeItem('userId')
-    
-    // Actualizar estado local
-    setCurrentUser(null)
-    
-    // Delay más largo para asegurar que el dropdown se cierre correctamente
-    setTimeout(() => {
-      window.location.reload()
-    }, 500)
+    // Usar el contexto para manejar el logout (sin recargas de página)
+    logout()
   }
 
   const checkUsernameAvailability = async (username) => {

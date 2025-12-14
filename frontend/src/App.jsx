@@ -1,5 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
 import Navigation from './components/Navigation'
 import Home from './pages/Home'
 import Discover from './pages/Discover'
@@ -9,7 +10,7 @@ import EditPost from './pages/EditPost'
 
 function App() {
   return (
-    <>
+    <AuthProvider>
       <Navigation />
       <main className="flex-grow-1">
         <Routes>
@@ -28,7 +29,7 @@ function App() {
           <small className="text-muted">Emiliano Sebastián Millán Giffard | 214360</small>
         </div>
       </footer>
-    </>
+    </AuthProvider>
   )
 }
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Container, Form, Button, Card, Alert, ButtonGroup, Spinner } from 'react-bootstrap'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import { postsAPI } from '../services/api'
 import { cache } from '../utils/cache'
 import axios from 'axios'
@@ -8,10 +9,10 @@ import { API_BASE_URL } from '../config/api'
 
 function CreatePost() {
   const navigate = useNavigate()
+  const { currentUser, isAuthenticated } = useAuth()
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
-  const [currentUser, setCurrentUser] = useState(null)
   const [imageMode, setImageMode] = useState('url') // 'url' o 'upload'
   const [previewUrl, setPreviewUrl] = useState('')
   const [formData, setFormData] = useState({
@@ -23,13 +24,11 @@ function CreatePost() {
   })
 
   useEffect(() => {
-    const user = sessionStorage.getItem('userId')
-    if (!user) {
+    if (!isAuthenticated()) {
       alert('Debes iniciar sesión para crear un post')
       navigate('/')
     }
-    setCurrentUser(user)
-  }, [navigate])
+  }, [isAuthenticated, navigate])
 
   const handleChange = (e) => {
     const { name, value } = e.target
