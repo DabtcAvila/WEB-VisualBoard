@@ -874,4 +874,620 @@ rm visual_board.db
 # El SQLAlchemy la recreará automáticamente
 ```
 
+---
+
+## 📡 ANEXO: API Calls y React Fundamentals
+
+### **A1. Conceptos Esenciales de React**
+
+#### **A1.1 Hooks Fundamentales**
+```jsx
+import React, { useState, useEffect } from 'react'
+
+function MiComponente() {
+  // Estado local
+  const [datos, setDatos] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Efecto que se ejecuta al montar componente
+  useEffect(() => {
+    // Llamar API cuando se monta
+    cargarDatos()
+  }, []) // [] = solo se ejecuta una vez
+
+  // Efecto que se ejecuta cuando cambia una variable
+  useEffect(() => {
+    console.log('Datos cambiaron:', datos)
+  }, [datos]) // Se ejecuta cada vez que 'datos' cambia
+
+  const cargarDatos = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/datos')
+      const resultado = await response.json()
+      setDatos(resultado)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div>
+      {loading && <p>Cargando...</p>}
+      {error && <p>Error: {error}</p>}
+      {datos.map(item => <div key={item.id}>{item.nombre}</div>)}
+    </div>
+  )
+}
+```
+
+#### **A1.2 Eventos y Formularios**
+```jsx
+function FormularioPost() {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    image_url: ''
+  })
+
+  // Manejar cambios en inputs
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,                    // Mantener datos existentes
+      [e.target.name]: e.target.value // Actualizar solo el campo que cambió
+    })
+  }
+
+  // Manejar envío del formulario
+  const handleSubmit = async (e) => {
+    e.preventDefault() // Evitar recarga de página
+    
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
+      
+      if (response.ok) {
+        alert('Post creado exitosamente')
+        // Limpiar formulario
+        setFormData({ title: '', description: '', image_url: '' })
+      }
+    } catch (error) {
+      alert('Error al crear post')
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        name="title"
+        value={formData.title}
+        onChange={handleChange}
+        placeholder="Título"
+        required
+      />
+      <textarea
+        name="description"
+        value={formData.description}
+        onChange={handleChange}
+        placeholder="Descripción"
+      />
+      <input
+        type="url"
+        name="image_url"
+        value={formData.image_url}
+        onChange={handleChange}
+        placeholder="URL de imagen"
+        required
+      />
+      <button type="submit">Crear Post</button>
+    </form>
+  )
+}
+```
+
+### **A2. Llamadas de API en JavaScript**
+
+#### **A2.1 Con Fetch (Nativo)**
+```javascript
+// GET - Obtener datos
+const obtenerPosts = async () => {
+  try {
+    const response = await fetch('http://localhost:8000/posts')
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+
+// POST - Crear nuevo recurso
+const crearPost = async (postData) => {
+  try {
+    const response = await fetch('http://localhost:8000/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': 'mi_usuario' // Header personalizado
+      },
+      body: JSON.stringify(postData)
+    })
+
+    if (!response.ok) {
+      throw new Error('Error al crear post')
+    }
+
+    const nuevoPost = await response.json()
+    return nuevoPost
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+
+// PUT - Actualizar recurso completo
+const actualizarPost = async (postId, postData) => {
+  try {
+    const response = await fetch(`http://localhost:8000/posts/${postId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': 'mi_usuario'
+      },
+      body: JSON.stringify(postData)
+    })
+
+    if (!response.ok) {
+      throw new Error('Error al actualizar post')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+
+// DELETE - Eliminar recurso
+const eliminarPost = async (postId) => {
+  try {
+    const response = await fetch(`http://localhost:8000/posts/${postId}`, {
+      method: 'DELETE',
+      headers: {
+        'X-User-Id': 'mi_usuario'
+      }
+    })
+
+    if (!response.ok) {
+      throw new Error('Error al eliminar post')
+    }
+
+    return true
+  } catch (error) {
+    console.error('Error:', error)
+    throw error
+  }
+}
+```
+
+#### **A2.2 Con Axios (Más fácil)**
+```javascript
+import axios from 'axios'
+
+// Configurar cliente base
+const api = axios.create({
+  baseURL: 'http://localhost:8000',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
+// Interceptor para agregar token automáticamente
+api.interceptors.request.use((config) => {
+  const userData = sessionStorage.getItem('userData')
+  if (userData) {
+    const user = JSON.parse(userData)
+    config.headers['X-User-Id'] = user.username
+  }
+  return config
+})
+
+// GET
+const obtenerPosts = async () => {
+  try {
+    const response = await api.get('/posts')
+    return response.data
+  } catch (error) {
+    console.error('Error:', error.response?.data || error.message)
+    throw error
+  }
+}
+
+// POST
+const crearPost = async (postData) => {
+  try {
+    const response = await api.post('/posts', postData)
+    return response.data
+  } catch (error) {
+    console.error('Error:', error.response?.data || error.message)
+    throw error
+  }
+}
+
+// DELETE
+const eliminarPost = async (postId) => {
+  try {
+    await api.delete(`/posts/${postId}`)
+    return true
+  } catch (error) {
+    console.error('Error:', error.response?.data || error.message)
+    throw error
+  }
+}
+```
+
+### **A3. FastAPI - Crear APIs en Python**
+
+#### **A3.1 Estructura Básica de Endpoint**
+```python
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
+from typing import List
+
+app = FastAPI()
+
+# Modelo de datos (esquema)
+class PostCreate(BaseModel):
+    title: str
+    description: str
+    image_url: str
+
+class PostResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    image_url: str
+    user_id: str
+
+# Lista en memoria (para ejemplo)
+posts_db = []
+
+# GET - Obtener todos los posts
+@app.get("/posts", response_model=List[PostResponse])
+def get_posts():
+    return posts_db
+
+# GET - Obtener post por ID
+@app.get("/posts/{post_id}", response_model=PostResponse)
+def get_post(post_id: int):
+    for post in posts_db:
+        if post["id"] == post_id:
+            return post
+    raise HTTPException(status_code=404, detail="Post no encontrado")
+
+# POST - Crear nuevo post
+@app.post("/posts", response_model=PostResponse)
+def create_post(post: PostCreate, x_user_id: str = Header(None)):
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="No autenticado")
+    
+    new_post = {
+        "id": len(posts_db) + 1,
+        "title": post.title,
+        "description": post.description,
+        "image_url": post.image_url,
+        "user_id": x_user_id
+    }
+    
+    posts_db.append(new_post)
+    return new_post
+
+# PUT - Actualizar post
+@app.put("/posts/{post_id}", response_model=PostResponse)
+def update_post(post_id: int, post: PostCreate, x_user_id: str = Header(None)):
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="No autenticado")
+    
+    for i, existing_post in enumerate(posts_db):
+        if existing_post["id"] == post_id:
+            if existing_post["user_id"] != x_user_id:
+                raise HTTPException(status_code=403, detail="No autorizado")
+            
+            updated_post = {
+                **existing_post,
+                "title": post.title,
+                "description": post.description,
+                "image_url": post.image_url
+            }
+            posts_db[i] = updated_post
+            return updated_post
+    
+    raise HTTPException(status_code=404, detail="Post no encontrado")
+
+# DELETE - Eliminar post
+@app.delete("/posts/{post_id}")
+def delete_post(post_id: int, x_user_id: str = Header(None)):
+    if not x_user_id:
+        raise HTTPException(status_code=401, detail="No autenticado")
+    
+    for i, post in enumerate(posts_db):
+        if post["id"] == post_id:
+            if post["user_id"] != x_user_id:
+                raise HTTPException(status_code=403, detail="No autorizado")
+            
+            posts_db.pop(i)
+            return {"message": "Post eliminado"}
+    
+    raise HTTPException(status_code=404, detail="Post no encontrado")
+```
+
+#### **A3.2 Manejo de Errores y Validaciones**
+```python
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, validator
+import re
+
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+    
+    @validator('username')
+    def username_must_be_valid(cls, v):
+        if len(v) < 3:
+            raise ValueError('Username debe tener al menos 3 caracteres')
+        if not re.match(r'^[a-zA-Z0-9_]+$', v):
+            raise ValueError('Username solo puede contener letras, números y _')
+        return v
+    
+    @validator('email')
+    def email_must_be_valid(cls, v):
+        if '@' not in v:
+            raise ValueError('Email inválido')
+        return v
+    
+    @validator('password')
+    def password_must_be_strong(cls, v):
+        if len(v) < 6:
+            raise ValueError('Password debe tener al menos 6 caracteres')
+        return v
+
+@app.post("/users/register")
+def register_user(user: UserCreate):
+    try:
+        # Lógica de registro aquí
+        return {"message": "Usuario creado exitosamente"}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno del servidor"
+        )
+```
+
+#### **A3.3 Middleware y CORS**
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Configurar CORS para permitir requests desde frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # URL del frontend
+    allow_credentials=True,
+    allow_methods=["*"],  # GET, POST, PUT, DELETE, etc.
+    allow_headers=["*"],  # Todos los headers
+)
+
+# Middleware personalizado
+@app.middleware("http")
+async def log_requests(request, call_next):
+    print(f"Request: {request.method} {request.url}")
+    response = await call_next(request)
+    print(f"Response: {response.status_code}")
+    return response
+```
+
+### **A4. Integración React + API**
+
+#### **A4.1 Hook Personalizado para API**
+```jsx
+import { useState, useEffect } from 'react'
+import { postsAPI } from '../services/api'
+
+// Custom hook para manejar posts
+function usePosts() {
+  const [posts, setPosts] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  // Cargar posts
+  const loadPosts = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await postsAPI.getAll()
+      setPosts(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Crear post
+  const createPost = async (postData) => {
+    try {
+      const newPost = await postsAPI.create(postData)
+      setPosts(prev => [newPost, ...prev]) // Agregar al inicio
+      return newPost
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
+  }
+
+  // Eliminar post
+  const deletePost = async (postId) => {
+    try {
+      await postsAPI.delete(postId)
+      setPosts(prev => prev.filter(post => post.id !== postId))
+      return true
+    } catch (err) {
+      setError(err.message)
+      throw err
+    }
+  }
+
+  // Cargar posts al montar hook
+  useEffect(() => {
+    loadPosts()
+  }, [])
+
+  return {
+    posts,
+    loading,
+    error,
+    loadPosts,
+    createPost,
+    deletePost
+  }
+}
+
+// Usar el hook en componente
+function PostsList() {
+  const { posts, loading, error, deletePost } = usePosts()
+
+  const handleDelete = async (postId) => {
+    if (window.confirm('¿Eliminar este post?')) {
+      try {
+        await deletePost(postId)
+        alert('Post eliminado')
+      } catch (error) {
+        alert('Error al eliminar')
+      }
+    }
+  }
+
+  if (loading) return <div>Cargando...</div>
+  if (error) return <div>Error: {error}</div>
+
+  return (
+    <div>
+      {posts.map(post => (
+        <div key={post.id}>
+          <h3>{post.title}</h3>
+          <p>{post.description}</p>
+          <button onClick={() => handleDelete(post.id)}>Eliminar</button>
+        </div>
+      ))}
+    </div>
+  )
+}
+```
+
+#### **A4.2 Manejo de Estados de Loading**
+```jsx
+function ComponenteConAPI() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+
+  const fetchData = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const response = await api.get('/datos')
+      setData(response.data)
+    } catch (err) {
+      setError('Error al cargar datos')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // Renderizado condicional
+  if (loading) {
+    return (
+      <div className="text-center">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger" role="alert">
+        {error}
+        <button onClick={fetchData} className="btn btn-link">
+          Reintentar
+        </button>
+      </div>
+    )
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="text-center text-muted">
+        No hay datos para mostrar
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {data.map(item => (
+        <div key={item.id}>{item.nombre}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+### **A5. Comandos Útiles para el Examen**
+
+```bash
+# FastAPI
+pip install fastapi uvicorn
+uvicorn main:app --reload
+
+# React
+npm create vite@latest mi-app -- --template react
+npm install axios react-router-dom bootstrap
+
+# Testing API endpoints
+curl -X GET http://localhost:8000/posts
+curl -X POST http://localhost:8000/posts -H "Content-Type: application/json" -d '{"title":"Test","description":"Test","image_url":"test.jpg"}'
+
+# Ver documentación automática de FastAPI
+# http://localhost:8000/docs
+```
+
 ¡Éxito en tu examen! 🎓
